@@ -1,7 +1,6 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz_data;
-import 'package:collection/collection.dart'; // ✅ for firstWhereOrNull
 
 import '../models/task_model.dart';
 import '../models/dashboard_data.dart';
@@ -11,15 +10,12 @@ class NotificationsService {
       FlutterLocalNotificationsPlugin();
   static DashboardData? _dashboardData;
 
-  /// Register DashboardData for callbacks
   static void registerDashboardData(DashboardData dashboard) {
     _dashboardData = dashboard;
   }
 
   static Future<void> init() async {
     tz_data.initializeTimeZones();
-    tz.setLocalLocation(tz.getLocation('Asia/Kathmandu'));
-
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosInit = DarwinInitializationSettings();
 
@@ -43,44 +39,7 @@ class NotificationsService {
         if (response.actionId == 'mark_done' &&
             payload != null &&
             _dashboardData != null) {
-          final task =
-              _dashboardData!.tasks.firstWhereOrNull((t) => t.id == payload);
-
-          if (task != null && !task.completed) {
-            _dashboardData!.toggleTask(payload, true);
-
-            // Schedule next occurrence if recurring
-            if (task.recurrence != "none" && task.dueDate != null) {
-              DateTime nextDate;
-              switch (task.recurrence) {
-                case "daily":
-                  nextDate = task.dueDate!.add(const Duration(days: 1));
-                  break;
-                case "weekly":
-                  nextDate = task.dueDate!.add(const Duration(days: 7));
-                  break;
-                case "monthly":
-                  nextDate = DateTime(
-                    task.dueDate!.year,
-                    task.dueDate!.month + 1,
-                    task.dueDate!.day,
-                  );
-                  break;
-                default:
-                  return;
-              }
-
-              final newTask = _dashboardData!.addTask(
-                task.title,
-                category: task.category,
-                priority: task.priority,
-                dueDate: nextDate,
-                recurrence: task.recurrence,
-              );
-
-              scheduleNotification(newTask, nextDate);
-            }
-          }
+          _dashboardData!.toggleTask(payload, true);
         }
       },
     );

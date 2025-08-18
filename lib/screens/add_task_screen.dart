@@ -6,6 +6,7 @@ import '../services/notifications_service.dart';
 
 class AddTaskScreen extends StatefulWidget {
   final Task? task;
+
   const AddTaskScreen({super.key, this.task});
 
   @override
@@ -13,99 +14,157 @@ class AddTaskScreen extends StatefulWidget {
 }
 
 class _AddTaskScreenState extends State<AddTaskScreen> {
-  final TextEditingController titleController = TextEditingController();
-  String selectedCategory = "General";
-  String selectedPriority = "Medium";
-  String selectedRecurrence = "none";
-  DateTime? selectedDueDate;
+  final TextEditingController _titleController = TextEditingController();
+  String category = "General";
+  String priority = "Medium";
+  DateTime? dueDate;
+  String recurrence = "none";
 
   @override
   void initState() {
     super.initState();
     if (widget.task != null) {
-      titleController.text = widget.task!.title;
-      selectedCategory = widget.task!.category;
-      selectedPriority = widget.task!.priority;
-      selectedRecurrence = widget.task!.recurrence;
-      selectedDueDate = widget.task!.dueDate;
+      _titleController.text = widget.task!.title;
+      category = widget.task!.category;
+      priority = widget.task!.priority;
+      dueDate = widget.task!.dueDate;
+      recurrence = widget.task!.recurrence;
     }
+  }
+
+  Future<void> _pickDueDate() async {
+    final now = DateTime.now();
+    final date = await showDatePicker(
+      context: context,
+      initialDate: dueDate ?? now,
+      firstDate: now,
+      lastDate: DateTime(now.year + 5),
+    );
+    if (date == null) return;
+
+    final time = await showTimePicker(
+      context: context,
+      initialTime: dueDate != null
+          ? TimeOfDay.fromDateTime(dueDate!)
+          : const TimeOfDay(hour: 9, minute: 0),
+    );
+    if (time == null) return;
+
+    setState(() {
+      dueDate =
+          DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    });
+  }
+
+  void _saveTask() {
+    final dashboard = Provider.of<DashboardData>(context, listen: false);
+    final title = _titleController.text.trim();
+    if (title.isEmpty) return;
+
+    if (widget.task != null) {
+      final updatedTask = widget.task!.copyWith(
+        title: title,
+        category: category,
+        priority: priority,
+        dueDate: dueDate,
+        recurrence: recurrence,
+      );
+      dashboard.updateTask(widget.task!.id, updatedTask);
+
+      if (dueDate != null) {
+        NotificationsService.scheduleNotification(updatedTask, dueDate!);
+      }
+    } else {
+      final newTask = dashboard.addTask(
+        title,
+        category: category,
+        priority: priority,
+        dueDate: dueDate,
+        recurrence: recurrence,
+      );
+
+      if (dueDate != null) {
+        NotificationsService.scheduleNotification(newTask, dueDate!);
+      }
+    }
+
+    Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
-    final dashboard = Provider.of<DashboardData>(context);
-
     return Scaffold(
-      appBar:
-          AppBar(title: Text(widget.task == null ? "Add Task" : "Edit Task")),
+      appBar: AppBar(
+        title: Text(widget.task != null ? "Edit Task" : "Add Task"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.check),
+            onPressed: _saveTask,
+          )
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
+        child: ListView(
           children: [
             TextField(
-              controller: titleController,
-              decoration: const InputDecoration(labelText: "Task Title"),
+              controller: _titleController,
+              decoration: const InputDecoration(
+                labelText: "Task Title",
+                border: OutlineInputBorder(),
+              ),
             ),
-            const SizedBox(height: 10),
-            DropdownButton<String>(
-              value: selectedCategory,
-              items: ["General", "Work", "Personal", "Study"]
-                  .map((cat) => DropdownMenuItem(value: cat, child: Text(cat)))
-                  .toList(),
-              onChanged: (val) {
-                if (val != null) setState(() => selectedCategory = val);
-              },
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: category,
+                    items: ["General", "Work", "Personal", "Study"]
+                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                        .toList(),
+                    onChanged: (val) => setState(() => category = val!),
+                    decoration: const InputDecoration(
+                      labelText: "Category",
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: priority,
+                    items: ["High", "Medium", "Low"]
+                        .map((p) => DropdownMenuItem(value: p, child: Text(p)))
+                        .toList(),
+                    onChanged: (val) => setState(() => priority = val!),
+                    decoration: const InputDecoration(
+                      labelText: "Priority",
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            DropdownButton<String>(
-              value: selectedPriority,
-              items: ["High", "Medium", "Low"]
-                  .map((p) => DropdownMenuItem(value: p, child: Text(p)))
-                  .toList(),
-              onChanged: (val) {
-                if (val != null) setState(() => selectedPriority = val);
-              },
+            const SizedBox(height: 16),
+            ListTile(
+              title: Text(dueDate != null
+                  ? "Due: ${dueDate!.day}/${dueDate!.month}/${dueDate!.year} ${dueDate!.hour}:${dueDate!.minute.toString().padLeft(2, '0')}"
+                  : "Set Due Date & Time"),
+              trailing: const Icon(Icons.calendar_today),
+              onTap: _pickDueDate,
             ),
-            DropdownButton<String>(
-              value: selectedRecurrence,
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: recurrence,
               items: ["none", "daily", "weekly", "monthly"]
                   .map((r) => DropdownMenuItem(value: r, child: Text(r)))
                   .toList(),
-              onChanged: (val) {
-                if (val != null) setState(() => selectedRecurrence = val);
-              },
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (titleController.text.isEmpty) return;
-                if (widget.task == null) {
-                  final newTask = dashboard.addTask(
-                    titleController.text,
-                    category: selectedCategory,
-                    priority: selectedPriority,
-                    dueDate: selectedDueDate,
-                    recurrence: selectedRecurrence,
-                  );
-                  if (newTask.dueDate != null) {
-                    NotificationsService.scheduleNotification(
-                        newTask, newTask.dueDate!);
-                  }
-                } else {
-                  final updatedTask = widget.task!.copyWith(
-                    title: titleController.text,
-                    category: selectedCategory,
-                    priority: selectedPriority,
-                    recurrence: selectedRecurrence,
-                    dueDate: selectedDueDate,
-                  );
-                  dashboard.updateTask(updatedTask.id, updatedTask);
-                  if (updatedTask.dueDate != null) {
-                    NotificationsService.scheduleNotification(
-                        updatedTask, updatedTask.dueDate!);
-                  }
-                }
-                Navigator.pop(context);
-              },
-              child: Text(widget.task == null ? "Add Task" : "Update Task"),
+              onChanged: (val) => setState(() => recurrence = val!),
+              decoration: const InputDecoration(
+                labelText: "Recurrence",
+                border: OutlineInputBorder(),
+              ),
             ),
           ],
         ),

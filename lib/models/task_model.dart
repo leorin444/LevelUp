@@ -5,24 +5,18 @@ part 'task_model.g.dart';
 class Task extends HiveObject {
   @HiveField(0)
   String id;
-
   @HiveField(1)
   String title;
-
   @HiveField(2)
   String category;
-
   @HiveField(3)
   String priority;
-
   @HiveField(4)
   bool completed;
-
   @HiveField(5)
   DateTime? dueDate;
-
   @HiveField(6)
-  String recurrence; // none, daily, weekly, monthly
+  String recurrence;
 
   Task({
     required this.id,
@@ -51,36 +45,6 @@ class Task extends HiveObject {
       completed: completed ?? this.completed,
       dueDate: dueDate ?? this.dueDate,
       recurrence: recurrence ?? this.recurrence,
-    );
-  }
-
-  // -------------------------------
-  // Firestore integration methods
-  // -------------------------------
-
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'title': title,
-      'category': category,
-      'priority': priority,
-      'completed': completed,
-      'dueDate': dueDate?.millisecondsSinceEpoch,
-      'recurrence': recurrence,
-    };
-  }
-
-  factory Task.fromMap(Map<String, dynamic> map) {
-    return Task(
-      id: map['id'] ?? DateTime.now().millisecondsSinceEpoch.toString(),
-      title: map['title'] ?? '',
-      category: map['category'] ?? 'General',
-      priority: map['priority'] ?? 'Medium',
-      completed: map['completed'] ?? false,
-      dueDate: map['dueDate'] != null
-          ? DateTime.fromMillisecondsSinceEpoch(map['dueDate'])
-          : null,
-      recurrence: map['recurrence'] ?? 'none',
     );
   }
 }
