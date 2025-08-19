@@ -50,6 +50,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     );
     if (time == null) return;
 
+    if (!mounted) return; // ✅ fix for async BuildContext warning
+
     setState(() {
       dueDate =
           DateTime(date.year, date.month, date.day, time.hour, time.minute);
@@ -119,7 +121,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: category,
+                    initialValue: category, // ✅ use initialValue
                     items: ["General", "Work", "Personal", "Study"]
                         .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                         .toList(),
@@ -133,7 +135,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: priority,
+                    initialValue: priority, // ✅ use initialValue
                     items: ["High", "Medium", "Low"]
                         .map((p) => DropdownMenuItem(value: p, child: Text(p)))
                         .toList(),
@@ -156,7 +158,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: recurrence,
+              initialValue: recurrence, // ✅ use initialValue
               items: ["none", "daily", "weekly", "monthly"]
                   .map((r) => DropdownMenuItem(value: r, child: Text(r)))
                   .toList(),

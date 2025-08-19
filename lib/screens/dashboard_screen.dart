@@ -107,7 +107,8 @@ class DashboardScreen extends StatelessWidget {
                   style: theme.textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 20),
-                buildPieChart(
+                buildPieChart( 
+                  
                   title: 'Completed Tasks by Category',
                   data: dashboardData.completedTasksByCategory(),
                   isDarkMode: isDarkMode,
@@ -187,7 +188,7 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return AlertDialog(
-      backgroundColor: theme.dialogBackgroundColor,
+      backgroundColor: theme.dialogTheme.backgroundColor,
       title: const Text('Add New Task'),
       content: SingleChildScrollView(
         child: Column(
@@ -224,7 +225,7 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
               ],
             ),
             DropdownButtonFormField<String>(
-              value: recurrence,
+              initialValue: recurrence,
               items: const [
                 DropdownMenuItem(value: 'none', child: Text('None')),
                 DropdownMenuItem(value: 'daily', child: Text('Daily')),

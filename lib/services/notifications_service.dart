@@ -16,6 +16,7 @@ class NotificationsService {
 
   static Future<void> init() async {
     tz_data.initializeTimeZones();
+
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosInit = DarwinInitializationSettings();
 
@@ -63,8 +64,6 @@ class NotificationsService {
         iOS: DarwinNotificationDetails(),
       ),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
     );
   }
 
@@ -76,7 +75,7 @@ class NotificationsService {
       "Task Reminder",
       "${task.title} is due at ${time.hour}:${time.minute.toString().padLeft(2, '0')}",
       tz.TZDateTime.from(time, tz.local),
-      NotificationDetails(
+      const NotificationDetails(
         android: AndroidNotificationDetails(
           'task_channel',
           'Tasks',
@@ -84,15 +83,13 @@ class NotificationsService {
           importance: Importance.max,
           priority: Priority.high,
           actions: [
-            const AndroidNotificationAction('snooze', 'Snooze 10 min'),
-            const AndroidNotificationAction('mark_done', 'Mark Done'),
+            AndroidNotificationAction('snooze', 'Snooze 10 min'),
+            AndroidNotificationAction('mark_done', 'Mark Done'),
           ],
         ),
-        iOS: const DarwinNotificationDetails(),
+        iOS: DarwinNotificationDetails(),
       ),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
       payload: task.id,
     );
   }

@@ -1,22 +1,29 @@
 import 'package:hive/hive.dart';
-part 'task_model.g.dart';
+
+part 'task_model.g.dart'; // Generated file
 
 @HiveType(typeId: 0)
 class Task extends HiveObject {
   @HiveField(0)
-  String id;
+  final String id;
+
   @HiveField(1)
-  String title;
+  final String title;
+
   @HiveField(2)
-  String category;
+  final String category;
+
   @HiveField(3)
-  String priority;
+  final String priority;
+
   @HiveField(4)
-  bool completed;
+  final bool completed;
+
   @HiveField(5)
-  DateTime? dueDate;
+  final DateTime? dueDate;
+
   @HiveField(6)
-  String recurrence;
+  final String recurrence;
 
   Task({
     required this.id,

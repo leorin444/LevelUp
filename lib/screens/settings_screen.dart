@@ -18,7 +18,7 @@ class SettingsScreen extends StatelessWidget {
                 title: const Text('Dark Mode'),
                 value: themeModel.isDarkMode,
                 onChanged: (val) => themeModel.toggleTheme(),
-                activeColor: theme.colorScheme.primary,
+                activeThumbColor: theme.colorScheme.primary,
               ),
             ],
           );

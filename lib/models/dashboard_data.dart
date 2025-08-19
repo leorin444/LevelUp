@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'package:uuid/uuid.dart'; // Added Uuid import
 import '../models/task_model.dart';
 import '../services/notifications_service.dart';
 
 class DashboardData extends ChangeNotifier {
   List<Task> _tasks = [];
   late Box<Task> _taskBox;
+  final Uuid _uuid = const Uuid(); // Uuid instance
 
   List<Task> get tasks => _tasks;
 
@@ -23,7 +25,7 @@ class DashboardData extends ChangeNotifier {
     String recurrence = "none",
   }) {
     final task = Task(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: _uuid.v4(), // Generate unique ID with Uuid
       title: title,
       category: category,
       priority: priority,
