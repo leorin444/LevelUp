@@ -41,7 +41,7 @@ class DashboardScreen extends StatelessWidget {
       ),
       body: Consumer<DashboardData>(
         builder: (context, dashboardData, _) {
-          final tasks = dashboardData.tasks;
+          final tasks = dashboardData.tasks.reversed.toList();
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
@@ -51,15 +51,18 @@ class DashboardScreen extends StatelessWidget {
                 ElevatedButton.icon(
                   onPressed: () => showDialog(
                     context: context,
-                    builder: (_) => AddTaskDialog(),
+                    builder: (_) => const AddTaskDialog(),
                   ),
                   icon: const Icon(Icons.add),
                   label: const Text('Add Task'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.colorScheme.primary,
+                    backgroundColor: Colors.blue, // brighter, more visible
+                    foregroundColor: Colors.white, // text/icon color
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 12, horizontal: 20),
+                    textStyle: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
-                const SizedBox(height: 20),
                 Text(
                   'Tasks:',
                   style: theme.textTheme.titleMedium
@@ -75,8 +78,10 @@ class DashboardScreen extends StatelessWidget {
                     return Card(
                       color: theme.cardColor,
                       child: ListTile(
-                        title:
-                            Text(task.title, style: theme.textTheme.bodyMedium),
+                        title: Text(
+                          task.title,
+                          style: theme.textTheme.bodyMedium,
+                        ),
                         subtitle: Text(
                           'Category: ${task.category}, Priority: ${task.priority}${task.dueDate != null ? ', Due: ${task.dueDate!.toLocal().toString().split(' ')[0]}' : ''}',
                           style: theme.textTheme.bodySmall,
@@ -91,7 +96,8 @@ class DashboardScreen extends StatelessWidget {
                               },
                             ),
                             IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
+                              icon: const Icon(Icons.delete,
+                                  color: Colors.red), // ✅ const already added
                               onPressed: () =>
                                   dashboardData.deleteTask(task.id),
                             ),
@@ -107,8 +113,7 @@ class DashboardScreen extends StatelessWidget {
                   style: theme.textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 20),
-                buildPieChart( 
-                  
+                buildPieChart(
                   title: 'Completed Tasks by Category',
                   data: dashboardData.completedTasksByCategory(),
                   isDarkMode: isDarkMode,
@@ -199,17 +204,27 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
             TextField(
                 controller: categoryController,
                 decoration: const InputDecoration(labelText: 'Category')),
-            TextField(
-                controller: priorityController,
-                decoration: const InputDecoration(
-                    labelText: 'Priority (Low/Medium/High)')),
+            DropdownButtonFormField<String>(
+              initialValue: priorityController.text.isEmpty
+                  ? 'Medium'
+                  : priorityController.text,
+              items: const [
+                DropdownMenuItem(value: 'Low', child: Text('Low')),
+                DropdownMenuItem(value: 'Medium', child: Text('Medium')),
+                DropdownMenuItem(value: 'High', child: Text('High')),
+              ],
+              onChanged: (val) => priorityController.text = val ?? 'Medium',
+              decoration: const InputDecoration(labelText: 'Priority'),
+            ),
             Row(
               children: [
                 const Text('Due Date: '),
                 TextButton(
-                  child: Text(dueDate == null
-                      ? 'Select'
-                      : '${dueDate!.toLocal()}'.split(' ')[0]),
+                  child: Text(
+                    dueDate == null
+                        ? 'Select'
+                        : '${dueDate!.toLocal()}'.split(' ')[0],
+                  ),
                   onPressed: () async {
                     final picked = await showDatePicker(
                       context: context,

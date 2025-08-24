@@ -11,7 +11,7 @@ class TaskDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dashboard = Provider.of<DashboardData>(context);
+    final dashboard = Provider.of<DashboardData>(context, listen: false);
 
     return Scaffold(
       appBar: AppBar(
@@ -24,6 +24,37 @@ class TaskDetailsScreen extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (_) => AddTaskScreen(task: task),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete, color: Colors.red),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (_) => AlertDialog(
+                  title: const Text("Delete Task"),
+                  content:
+                      const Text("Are you sure you want to delete this task?"),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context), // cancel
+                      child: const Text("Cancel"),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        dashboard
+                            .deleteTask(task.id); // ✅ delete only this task
+                        //  Navigator.pop(context); // close dialog
+                        Navigator.pop(context); // go back to task list
+                      },
+                      child: const Text(
+                        "Delete",
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    ),
+                  ],
                 ),
               );
             },
@@ -54,8 +85,11 @@ class TaskDetailsScreen extends StatelessWidget {
                 const Text("Completed: ", style: TextStyle(fontSize: 18)),
                 Checkbox(
                   value: task.completed,
-                  onChanged: (value) {
-                    dashboard.toggleTask(task.id, value ?? false);
+                  onChanged: (value) async {
+                    task.completed = value ?? false;
+                    await task.save(); // ✅ persist in Hive
+                    dashboard.toggleTask(
+                        task.id, value ?? false); // keep provider synced
                   },
                 ),
               ],

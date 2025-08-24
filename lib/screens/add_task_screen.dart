@@ -34,13 +34,16 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
   Future<void> _pickDueDate() async {
     final now = DateTime.now();
+
     final date = await showDatePicker(
       context: context,
       initialDate: dueDate ?? now,
       firstDate: now,
       lastDate: DateTime(now.year + 5),
     );
+
     if (date == null) return;
+    if (!mounted) return; // ✅ check after async gap
 
     final time = await showTimePicker(
       context: context,
@@ -48,9 +51,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           ? TimeOfDay.fromDateTime(dueDate!)
           : const TimeOfDay(hour: 9, minute: 0),
     );
-    if (time == null) return;
 
-    if (!mounted) return; // ✅ fix for async BuildContext warning
+    if (time == null) return;
+    if (!mounted) return; // ✅ check after async gap
 
     setState(() {
       dueDate =
@@ -90,6 +93,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       }
     }
 
+    if (!mounted) return; // ✅ guard before navigation
     Navigator.pop(context);
   }
 
@@ -121,7 +125,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    initialValue: category, // ✅ use initialValue
+                    initialValue: category,
                     items: ["General", "Work", "Personal", "Study"]
                         .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                         .toList(),
@@ -135,7 +139,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    initialValue: priority, // ✅ use initialValue
+                    initialValue: priority,
                     items: ["High", "Medium", "Low"]
                         .map((p) => DropdownMenuItem(value: p, child: Text(p)))
                         .toList(),
@@ -158,7 +162,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              initialValue: recurrence, // ✅ use initialValue
+              initialValue: recurrence,
               items: ["none", "daily", "weekly", "monthly"]
                   .map((r) => DropdownMenuItem(value: r, child: Text(r)))
                   .toList(),

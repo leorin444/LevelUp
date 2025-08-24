@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:uuid/uuid.dart'; // Added Uuid import
 import '../models/task_model.dart';
 import '../services/notifications_service.dart';
 
 class DashboardData extends ChangeNotifier {
   List<Task> _tasks = [];
   late Box<Task> _taskBox;
-  final Uuid _uuid = const Uuid(); // Uuid instance
 
   List<Task> get tasks => _tasks;
 
   Future<void> init() async {
-    _taskBox = await Hive.openBox<Task>('tasks');
-    _tasks = _taskBox.values.toList();
+    _taskBox = await Hive.openBox<Task>('tasksBox'); // open Hive box
+    _tasks.addAll(_taskBox.values); // ✅ load saved tasks
+    _tasks = _taskBox.values.toList(); // ✅ load all tasks, not just one
     notifyListeners();
   }
 
@@ -25,7 +24,7 @@ class DashboardData extends ChangeNotifier {
     String recurrence = "none",
   }) {
     final task = Task(
-      id: _uuid.v4(), // Generate unique ID with Uuid
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
       title: title,
       category: category,
       priority: priority,
@@ -34,21 +33,31 @@ class DashboardData extends ChangeNotifier {
       recurrence: recurrence,
     );
 
+    // Store task with its string ID as key
+
+    _tasks.add(task); // update in-memory list
     _taskBox.put(task.id, task);
-    _tasks = _taskBox.values.toList();
+    //_tasks = _taskBox.values.toList(); // refresh in-memory list
     notifyListeners();
     return task;
   }
 
   void toggleTask(String id, bool completed) {
     final task = _taskBox.get(id);
+
     if (task != null) {
-      final updatedTask = task.copyWith(completed: completed);
-      _taskBox.put(id, updatedTask);
+      // Update the task property
+      task.completed = completed;
+
+      // Save the updated task in Hive using the string ID
+      _taskBox.put(task.id, task);
+
+      // Refresh the in-memory list
       _tasks = _taskBox.values.toList();
+
       notifyListeners();
 
-      // Recurring tasks
+      // Handle recurring tasks
       if (completed && task.recurrence != "none" && task.dueDate != null) {
         DateTime nextDate;
         switch (task.recurrence) {
@@ -83,8 +92,8 @@ class DashboardData extends ChangeNotifier {
   }
 
   void deleteTask(String id) {
-    _taskBox.delete(id);
-    _tasks = _taskBox.values.toList();
+    _taskBox.delete(id); // deletes the correct task
+    _tasks = _taskBox.values.toList(); // reload list
     notifyListeners();
   }
 
@@ -92,7 +101,7 @@ class DashboardData extends ChangeNotifier {
     final today = DateTime.now();
     return _tasks
         .where((t) =>
-            t.completed &&
+            t.completed == true && // ✅ ensure non-null
             t.dueDate != null &&
             t.dueDate!.year == today.year &&
             t.dueDate!.month == today.month &&
@@ -101,10 +110,21 @@ class DashboardData extends ChangeNotifier {
   }
 
   void updateTask(String id, Task updatedTask) {
-    _taskBox.put(id, updatedTask);
-    _tasks = _taskBox.values.toList();
-    notifyListeners();
+    if (_taskBox.containsKey(id)) {
+      _taskBox.put(id, updatedTask); // update Hive
+      _tasks = _taskBox.values.toList(); // refresh in-memory list
+      notifyListeners();
+    }
   }
+
+  // void updateTask(String id, Task updatedTask) {
+  //   final index = _tasks.indexWhere((t) => t.id == id);
+  //   if (index != -1) {
+  //     _tasks[index] = updatedTask;
+  //     _taskBox.putAt(index, updatedTask); // ✅ update in Hive
+  //     notifyListeners();
+  //   }
+  // }
 
   int longestStreak() {
     // Implement streak logic if needed
