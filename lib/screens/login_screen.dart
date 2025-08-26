@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import '../models/task_model.dart'; // make sure path is correct
+import '../main.dart'; // for MainNavigation
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -20,10 +23,29 @@ class _LoginScreenState extends State<LoginScreen> {
         password: passwordController.text.trim(),
       );
 
-      if (!mounted) return; // ✅ ensure widget is still in the tree
-      Navigator.pushReplacementNamed(context, '/dashboard');
+      final user = _auth.currentUser;
+      if (user != null) {
+        // Open user-specific Hive box
+        await Hive.openBox<Task>('tasks_${user.uid}');
+      }
+
+      if (!mounted) return;
+
+      // Show welcome popup
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Welcome back, ${user?.email ?? 'User'}!'),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+
+      // Navigate to MainNavigation
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const MainNavigation()),
+      );
     } catch (e) {
-      if (!mounted) return; // ✅ prevent context use if disposed
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Login failed: $e')),
       );
@@ -37,8 +59,27 @@ class _LoginScreenState extends State<LoginScreen> {
         password: passwordController.text.trim(),
       );
 
-      if (!mounted) return; // ✅ guard here too
-      Navigator.pushReplacementNamed(context, '/dashboard');
+      final user = _auth.currentUser;
+      if (user != null) {
+        // Open user-specific Hive box
+        await Hive.openBox<Task>('tasks_${user.uid}');
+      }
+
+      if (!mounted) return;
+
+      // Show welcome popup
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Welcome, ${user?.email ?? 'User'}!'),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+
+      // Navigate to MainNavigation
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const MainNavigation()),
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -51,23 +92,61 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Login')),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            TextField(
+            TextFormField(
               controller: emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
+              decoration: InputDecoration(
+                labelText: 'Email',
+                prefixIcon: const Icon(Icons.email),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              keyboardType: TextInputType.emailAddress,
             ),
             const SizedBox(height: 16),
-            TextField(
+            TextFormField(
               controller: passwordController,
               obscureText: true,
-              decoration: const InputDecoration(labelText: 'Password'),
+              decoration: InputDecoration(
+                labelText: 'Password',
+                prefixIcon: const Icon(Icons.lock),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
-            const SizedBox(height: 16),
-            ElevatedButton(onPressed: _login, child: const Text('Login')),
-            TextButton(onPressed: _register, child: const Text('Register')),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _login,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text('Login'),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: _register,
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text('Register'),
+              ),
+            ),
           ],
         ),
       ),

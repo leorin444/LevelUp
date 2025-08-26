@@ -5,29 +5,26 @@ import 'models/dashboard_data.dart';
 import 'models/theme_model.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/settings_screen.dart';
-import 'models/task_model.dart'; // ✅ contains TaskAdapter
+import 'models/task_model.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'screens/login_screen.dart';
-import 'firebase_options.dart' as firebase_options; // ✅ add prefix
+import 'firebase_options.dart' as firebase_options;
+import 'screens/reports_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase
   await Firebase.initializeApp(
     options: firebase_options.DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Initialize Hive
   await Hive.initFlutter();
   Hive.registerAdapter(TaskAdapter());
 
-  // Initialize Theme
   final themeModel = ThemeModel();
   await themeModel.init();
 
-  // Initialize DashboardData (tasks)
   final dashboardData = DashboardData();
   await dashboardData.init();
 
@@ -85,14 +82,17 @@ class MyDashboardApp extends StatelessWidget {
         ),
       ),
       themeMode: themeModel.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-      home: FirebaseAuth.instance.currentUser == null
-          ? const LoginScreen()
-          : const MainNavigation(),
+      initialRoute:
+          FirebaseAuth.instance.currentUser == null ? '/login' : '/dashboard',
+      routes: {
+        '/login': (context) => const LoginScreen(),
+        '/dashboard': (context) => const MainNavigation(),
+        '/reports': (context) => const ReportsScreen(),
+      },
     );
   }
 }
 
-// Bottom navigation widget
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
 

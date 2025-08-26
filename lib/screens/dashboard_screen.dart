@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/dashboard_data.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'add_task_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
-  // Distinct colors for chart sections
   Color getSectionColor(int index, bool isDarkMode) {
     const lightColors = [
       Colors.blue,
@@ -33,6 +34,19 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
+    final user = FirebaseAuth.instance.currentUser;
+
+    final username = user?.displayName ?? user?.email?.split('@')[0] ?? 'User';
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Welcome, $username!'),
+          duration: const Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -48,21 +62,85 @@ class DashboardScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ElevatedButton.icon(
-                  onPressed: () => showDialog(
-                    context: context,
-                    builder: (_) => const AddTaskDialog(),
-                  ),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add Task'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue, // brighter, more visible
-                    foregroundColor: Colors.white, // text/icon color
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 12, horizontal: 20),
-                    textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Text(
+                    'Welcome, ${user?.displayName ?? user?.email ?? 'User'}!',
+                    style: theme.textTheme.headlineSmall
+                        ?.copyWith(fontWeight: FontWeight.bold),
                   ),
                 ),
+                // Row(
+                //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                //   children: [
+                //     ElevatedButton.icon(
+                //       onPressed: () => showDialog(
+                //         context: context,
+                //         builder: (_) => const AddTaskDialog(),
+                //       ),
+                //       icon: const Icon(Icons.add),
+                //       label: const Text('Add Task'),
+                //       style: ElevatedButton.styleFrom(
+                //         backgroundColor: Colors.blue,
+                //         foregroundColor: Colors.white,
+                //         padding: const EdgeInsets.symmetric(
+                //             vertical: 12, horizontal: 20),
+                //         textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                //       ),
+                //     ),
+                //     ElevatedButton.icon(
+                //       onPressed: () => Navigator.pushNamed(context, '/reports'),
+                //       icon: const Icon(Icons.pie_chart),
+                //       label: const Text('View Reports'),
+                //       style: ElevatedButton.styleFrom(
+                //         backgroundColor: Colors.green,
+                //         foregroundColor: Colors.white,
+                //         padding: const EdgeInsets.symmetric(
+                //             vertical: 12, horizontal: 20),
+                //         textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                //       ),
+                //     ),
+                //   ],
+                // ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => showDialog(
+                          context: context,
+                          builder: (_) => const AddTaskDialog(),
+                        ),
+                        icon: const Icon(Icons.add),
+                        label: const Text('Add Task'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          textStyle:
+                              const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () =>
+                            Navigator.pushNamed(context, '/reports'),
+                        icon: const Icon(Icons.pie_chart),
+                        label: const Text('View Reports'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          textStyle:
+                              const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
                 Text(
                   'Tasks:',
                   style: theme.textTheme.titleMedium
@@ -78,10 +156,8 @@ class DashboardScreen extends StatelessWidget {
                     return Card(
                       color: theme.cardColor,
                       child: ListTile(
-                        title: Text(
-                          task.title,
-                          style: theme.textTheme.bodyMedium,
-                        ),
+                        title:
+                            Text(task.title, style: theme.textTheme.bodyMedium),
                         subtitle: Text(
                           'Category: ${task.category}, Priority: ${task.priority}${task.dueDate != null ? ', Due: ${task.dueDate!.toLocal().toString().split(' ')[0]}' : ''}',
                           style: theme.textTheme.bodySmall,
@@ -96,10 +172,45 @@ class DashboardScreen extends StatelessWidget {
                               },
                             ),
                             IconButton(
-                              icon: const Icon(Icons.delete,
-                                  color: Colors.red), // ✅ const already added
-                              onPressed: () =>
-                                  dashboardData.deleteTask(task.id),
+                              icon: const Icon(Icons.edit, color: Colors.blue),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => AddTaskScreen(task: task),
+                                  ),
+                                );
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    title: const Text("Delete Task"),
+                                    content: const Text(
+                                        "Are you sure you want to delete this task?"),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(ctx).pop(),
+                                        child: const Text("Cancel"),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          dashboardData.deleteTask(task.id);
+                                          Navigator.of(ctx).pop();
+                                        },
+                                        child: const Text(
+                                          "Delete",
+                                          style: TextStyle(color: Colors.red),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
                             ),
                           ],
                         ),
@@ -174,7 +285,7 @@ class DashboardScreen extends StatelessWidget {
   }
 }
 
-// Reusable Add Task Dialog Widget
+// AddTaskDialog unchanged
 class AddTaskDialog extends StatefulWidget {
   const AddTaskDialog({super.key});
 
@@ -220,11 +331,9 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
               children: [
                 const Text('Due Date: '),
                 TextButton(
-                  child: Text(
-                    dueDate == null
-                        ? 'Select'
-                        : '${dueDate!.toLocal()}'.split(' ')[0],
-                  ),
+                  child: Text(dueDate == null
+                      ? 'Select'
+                      : '${dueDate!.toLocal()}'.split(' ')[0]),
                   onPressed: () async {
                     final picked = await showDatePicker(
                       context: context,
@@ -232,9 +341,7 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
                       firstDate: DateTime.now(),
                       lastDate: DateTime(2100),
                     );
-                    if (picked != null) {
-                      setState(() => dueDate = picked);
-                    }
+                    if (picked != null) setState(() => dueDate = picked);
                   },
                 ),
               ],
