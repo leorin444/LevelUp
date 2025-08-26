@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import '../models/task_model.dart';
-import '../services/notifications_service.dart';
+// import '../services/notifications_service.dart';
 
 class DashboardData extends ChangeNotifier {
   List<Task> _tasks = [];
@@ -10,9 +10,8 @@ class DashboardData extends ChangeNotifier {
   List<Task> get tasks => _tasks;
 
   Future<void> init() async {
-    _taskBox = await Hive.openBox<Task>('tasksBox'); // open Hive box
-    _tasks.addAll(_taskBox.values); // ✅ load saved tasks
-    _tasks = _taskBox.values.toList(); // ✅ load all tasks, not just one
+    _taskBox = await Hive.openBox<Task>('tasksBox');
+    _tasks = _taskBox.values.toList(); // load all tasks
     notifyListeners();
   }
 
@@ -33,12 +32,14 @@ class DashboardData extends ChangeNotifier {
       recurrence: recurrence,
     );
 
-    // Store task with its string ID as key
-
-    _tasks.add(task); // update in-memory list
+    // ✅ Save task in Hive
     _taskBox.put(task.id, task);
-    //_tasks = _taskBox.values.toList(); // refresh in-memory list
-    notifyListeners();
+
+    // ✅ Add to in-memory list
+    _tasks.add(task);
+
+    notifyListeners(); // ✅ refresh UI
+
     return task;
   }
 
@@ -46,54 +47,41 @@ class DashboardData extends ChangeNotifier {
     final task = _taskBox.get(id);
 
     if (task != null) {
-      // Update the task property
+      // Update task property
       task.completed = completed;
 
-      // Save the updated task in Hive using the string ID
-      _taskBox.put(task.id, task);
+      // Save updated task in Hive
+      _taskBox.put(id, task); // ✅ overwrite using id
 
-      // Refresh the in-memory list
-      _tasks = _taskBox.values.toList();
-
-      notifyListeners();
-
-      // Handle recurring tasks
-      if (completed && task.recurrence != "none" && task.dueDate != null) {
-        DateTime nextDate;
-        switch (task.recurrence) {
-          case "daily":
-            nextDate = task.dueDate!.add(const Duration(days: 1));
-            break;
-          case "weekly":
-            nextDate = task.dueDate!.add(const Duration(days: 7));
-            break;
-          case "monthly":
-            nextDate = DateTime(
-              task.dueDate!.year,
-              task.dueDate!.month + 1,
-              task.dueDate!.day,
-            );
-            break;
-          default:
-            return;
-        }
-
-        final newTask = addTask(
-          task.title,
-          category: task.category,
-          priority: task.priority,
-          dueDate: nextDate,
-          recurrence: task.recurrence,
-        );
-
-        NotificationsService.scheduleNotification(newTask, nextDate);
+      // Update in-memory list
+      final index = _tasks.indexWhere((t) => t.id == id);
+      if (index != -1) {
+        _tasks[index] = task;
       }
+
+      notifyListeners(); // ✅ refresh UI
     }
   }
 
-  void deleteTask(String id) {
-    _taskBox.delete(id); // deletes the correct task
-    _tasks = _taskBox.values.toList(); // reload list
+  void deleteTask(String taskId) {
+    // final key = _taskBox.keys.firstWhere(
+    //   (k) => _taskBox.get(k)!.id == taskId,
+    //   orElse: () => null,
+    // );
+
+    _taskBox.delete(taskId); // ✅ directly delete by id
+    _tasks = _taskBox.values.toList();
+    notifyListeners();
+  }
+
+  void updateTask(String taskId, Task updatedTask) {
+    // final key = _taskBox.keys.firstWhere(
+    //   (k) => _taskBox.get(k)!.id == taskId,
+    //   orElse: () => null,
+    // );
+
+    _taskBox.put(taskId, updatedTask); // ✅ overwrite directly
+    _tasks = _taskBox.values.toList();
     notifyListeners();
   }
 
@@ -101,7 +89,7 @@ class DashboardData extends ChangeNotifier {
     final today = DateTime.now();
     return _tasks
         .where((t) =>
-            t.completed == true && // ✅ ensure non-null
+            t.completed &&
             t.dueDate != null &&
             t.dueDate!.year == today.year &&
             t.dueDate!.month == today.month &&
@@ -109,25 +97,8 @@ class DashboardData extends ChangeNotifier {
         .length;
   }
 
-  void updateTask(String id, Task updatedTask) {
-    if (_taskBox.containsKey(id)) {
-      _taskBox.put(id, updatedTask); // update Hive
-      _tasks = _taskBox.values.toList(); // refresh in-memory list
-      notifyListeners();
-    }
-  }
-
-  // void updateTask(String id, Task updatedTask) {
-  //   final index = _tasks.indexWhere((t) => t.id == id);
-  //   if (index != -1) {
-  //     _tasks[index] = updatedTask;
-  //     _taskBox.putAt(index, updatedTask); // ✅ update in Hive
-  //     notifyListeners();
-  //   }
-  // }
-
   int longestStreak() {
-    // Implement streak logic if needed
+    // placeholder for streak logic
     return 0;
   }
 

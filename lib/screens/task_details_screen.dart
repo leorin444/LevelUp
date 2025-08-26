@@ -18,36 +18,49 @@ class TaskDetailsScreen extends StatelessWidget {
         title: const Text("Task Details"),
         actions: [
           IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => AddTaskScreen(task: task),
-                ),
-              );
-            },
-          ),
+              icon: const Icon(Icons.edit),
+              onPressed: () async {
+                final navigator = Navigator.of(context); // capture before await
+                final dashboard = Provider.of<DashboardData>(context,
+                    listen: false); // capture before await
+
+                await navigator.push(
+                  MaterialPageRoute(
+                    builder: (_) => AddTaskScreen(task: task),
+                  ),
+                );
+
+                // Refresh the task safely (no context usage here)
+                final refreshedTask =
+                    dashboard.tasks.firstWhere((t) => t.id == task.id);
+
+                task.title = refreshedTask.title;
+                task.category = refreshedTask.category;
+                task.priority = refreshedTask.priority;
+                task.dueDate = refreshedTask.dueDate;
+                task.recurrence = refreshedTask.recurrence;
+                task.completed = refreshedTask.completed;
+              }),
           IconButton(
             icon: const Icon(Icons.delete, color: Colors.red),
             onPressed: () {
               showDialog(
                 context: context,
-                builder: (_) => AlertDialog(
+                builder: (dialogContext) => AlertDialog(
                   title: const Text("Delete Task"),
                   content:
                       const Text("Are you sure you want to delete this task?"),
                   actions: [
                     TextButton(
-                      onPressed: () => Navigator.pop(context), // cancel
+                      onPressed: () =>
+                          Navigator.of(dialogContext).pop(), // cancel
                       child: const Text("Cancel"),
                     ),
                     TextButton(
                       onPressed: () {
-                        dashboard
-                            .deleteTask(task.id); // ✅ delete only this task
-                        //  Navigator.pop(context); // close dialog
-                        Navigator.pop(context); // go back to task list
+                        dashboard.deleteTask(task.id); // delete only this task
+                        Navigator.of(dialogContext).pop(); // close dialog
+                        Navigator.of(context).pop(); // go back to task list
                       },
                       child: const Text(
                         "Delete",

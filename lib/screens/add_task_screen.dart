@@ -66,11 +66,22 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     final title = _titleController.text.trim();
     if (title.isEmpty) return;
 
+    // if (widget.task != null) {
+    //   final updatedTask = widget.task!.copyWith(
+    //     title: title,
+    //     category: category,
+    //     priority: priority,
+    //     dueDate: dueDate,
+    //     recurrence: recurrence,
+    //   );
+    //   dashboard.updateTask(widget.task!.id, updatedTask);
     if (widget.task != null) {
-      final updatedTask = widget.task!.copyWith(
+      final updatedTask = Task(
+        id: widget.task!.id, // keep same ID
         title: title,
         category: category,
         priority: priority,
+        completed: widget.task!.completed, // keep completion status
         dueDate: dueDate,
         recurrence: recurrence,
       );

@@ -6,14 +6,28 @@ import 'models/theme_model.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/settings_screen.dart';
 import 'models/task_model.dart'; // ✅ contains TaskAdapter
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'screens/login_screen.dart';
+import 'firebase_options.dart' as firebase_options; // ✅ add prefix
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: firebase_options.DefaultFirebaseOptions.currentPlatform,
+  );
+
+  // Initialize Hive
   await Hive.initFlutter();
-  Hive.registerAdapter(TaskAdapter()); // ✅ important
+  Hive.registerAdapter(TaskAdapter());
+
+  // Initialize Theme
   final themeModel = ThemeModel();
   await themeModel.init();
 
+  // Initialize DashboardData (tasks)
   final dashboardData = DashboardData();
   await dashboardData.init();
 
@@ -71,7 +85,9 @@ class MyDashboardApp extends StatelessWidget {
         ),
       ),
       themeMode: themeModel.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-      home: const MainNavigation(),
+      home: FirebaseAuth.instance.currentUser == null
+          ? const LoginScreen()
+          : const MainNavigation(),
     );
   }
 }
