@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/task_model.dart'; // make sure path is correct
 import '../main.dart'; // for MainNavigation
+import '../models/dashboard_data.dart';
+import 'package:provider/provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -26,12 +28,15 @@ class _LoginScreenState extends State<LoginScreen> {
       final user = _auth.currentUser;
       if (user != null) {
         // Open user-specific Hive box
-        await Hive.openBox<Task>('tasks_${user.uid}');
+        final box = await Hive.openBox<Task>('tasks_${user.uid}');
+
+        // Load tasks into DashboardData
+        final dashboard = Provider.of<DashboardData>(context, listen: false);
+        dashboard.setBox(box);
       }
 
       if (!mounted) return;
 
-      // Show welcome popup
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Welcome back, ${user?.email ?? 'User'}!'),
@@ -39,7 +44,6 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
 
-      // Navigate to MainNavigation
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const MainNavigation()),
@@ -62,12 +66,15 @@ class _LoginScreenState extends State<LoginScreen> {
       final user = _auth.currentUser;
       if (user != null) {
         // Open user-specific Hive box
-        await Hive.openBox<Task>('tasks_${user.uid}');
+        final box = await Hive.openBox<Task>('tasks_${user.uid}');
+
+        // Load tasks into DashboardData
+        final dashboard = Provider.of<DashboardData>(context, listen: false);
+        dashboard.setBox(box);
       }
 
       if (!mounted) return;
 
-      // Show welcome popup
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Welcome, ${user?.email ?? 'User'}!'),
@@ -75,7 +82,6 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
 
-      // Navigate to MainNavigation
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const MainNavigation()),

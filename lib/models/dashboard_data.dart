@@ -15,6 +15,12 @@ class DashboardData extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setBox(Box<Task> box) {
+    _taskBox = box;
+    _tasks = _taskBox.values.toList();
+    notifyListeners();
+  }
+
   Task addTask(
     String title, {
     String category = "General",
